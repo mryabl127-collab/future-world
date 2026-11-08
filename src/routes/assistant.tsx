@@ -3,15 +3,16 @@ import { useEffect, useRef, useState } from "react";
 import { Bot, Plus, Send, Trash2, AlertTriangle, MessageSquare, Square, Copy, Check, Sparkles } from "lucide-react";
 import { useLocal } from "@/lib/store";
 import { streamChatCompletion, type ChatMessage } from "@/lib/ai-service";
+import { useTranslation } from "@/lib/i18n";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/assistant")({
   head: () => ({
     meta: [
-      { title: "AI Assistant | FUTURE WORLD" },
-      { name: "description", content: "Chat with a real AI assistant in Arabic or English about cybersecurity and technology." },
-      { property: "og:title", content: "AI Assistant | FUTURE WORLD" },
-      { property: "og:description", content: "Bilingual AI assistant for cybersecurity learning and general questions." },
+      { title: "المساعد الذكي الشامل | FUTURE WORLD AI" },
+      { name: "description", content: "مساعد ذكي شامل وموسوعي يجيب عن كل استفساراتك في العلوم، البرمجة، التقنية، الحماية الرقمية، والحياة اليومية." },
+      { property: "og:title", content: "المساعد الذكي الشامل | FUTURE WORLD" },
+      { property: "og:description", content: "مساعد ذكي فائق السرعة يدعم كافة الأسئلة العامة والتقنية باللغتين العربية والإنجليزية." },
     ],
   }),
   component: Assistant,
@@ -21,15 +22,16 @@ type Msg = { role: "user" | "assistant"; content: string; error?: boolean };
 type Conv = { id: string; title: string; updatedAt: number; messages: Msg[] };
 
 const SUGGESTIONS = [
-  { ar: "ما هو التصيد الاحتيالي وكيف أكتشفه؟", en: "What is phishing and how do I spot it?" },
-  { ar: "كيف أحمي هاتفي عند الاتصال بشبكة واي فاي عامة؟", en: "How to protect my phone on public Wi-Fi?" },
-  { ar: "ما هي أهمية المصادقة الثنائية (2FA)؟", en: "Why is Two-Factor Authentication important?" },
-  { ar: "كيف أنشئ كلمة مرور قوية وسهلة التذكر؟", en: "How do I create a strong memorable password?" },
-  { ar: "اشرح لي ما هو جدار الحماية (Firewall) ببساطة", en: "Explain how firewalls work simply" },
-  { ar: "اقترح خطة لتعلم الأمن السيبراني للمبتدئين", en: "Suggest a roadmap for cybersecurity beginners" },
+  { ar: "اشرح لي كيفية عمل نماذج الذكاء الاصطناعي التوليدي LLM", en: "How do generative AI and LLMs actually work?" },
+  { ar: "ما هي أفضل خارطة طريق لتعلم البرمجة وتطوير البرمجيات؟", en: "What is the best roadmap to learn programming?" },
+  { ar: "كيف أحمي حساباتي المصرفية والشخصية من الاختراق والتصيد؟", en: "How to protect bank and personal accounts from scams?" },
+  { ar: "ما الفرق بين الحوسبة الكمية والحوسبة التقليدية؟", en: "Difference between quantum computing and classical computers?" },
+  { ar: "ساعدني في كتابة كود Python لحل مشكلة وتحليل بيانات", en: "Help me write a Python script for data processing" },
+  { ar: "نصائح لتسريع الهاتف وتحسين كفاءة البطارية والذاكرة", en: "Tips to optimize phone battery and memory performance" },
 ];
 
 function Assistant() {
+  const { t, isAr } = useTranslation();
   const [convs, setConvs] = useLocal<Conv[]>("fw-chats", []);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [input, setInput] = useState("");
@@ -56,20 +58,20 @@ function Assistant() {
   const copyText = (text: string, idx: number) => {
     navigator.clipboard.writeText(text);
     setCopiedIndex(idx);
-    toast.success("تم نسخ النص / Copied to clipboard");
+    toast.success(isAr ? "تم نسخ النص بنجاح!" : "Copied to clipboard!");
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
   async function send(text: string) {
-    const t = text.trim();
-    if (!t || busy) return;
+    const tVal = text.trim();
+    if (!tVal || busy) return;
 
     const id = active?.id ?? crypto.randomUUID();
-    const history: Msg[] = [...messages.filter((m) => !m.error), { role: "user", content: t }];
+    const history: Msg[] = [...messages.filter((m) => !m.error), { role: "user", content: tVal }];
     let list = convs.filter((c) => c.id !== id);
     const base: Conv = {
       id,
-      title: active?.title ?? (t.length > 40 ? t.slice(0, 40) + "…" : t),
+      title: active?.title ?? (tVal.length > 40 ? tVal.slice(0, 40) + "…" : tVal),
       updatedAt: Date.now(),
       messages: [...history, { role: "assistant", content: "" }],
     };
@@ -79,42 +81,49 @@ function Assistant() {
     setInput("");
     setBusy(true);
 
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
-    let acc = "";
+    const controller = new AbortController();
+    abortRef.current = controller;
 
-    const update = (m: Msg) => {
-      list = list.filter((c) => c.id !== id);
-      save([{ ...base, updatedAt: Date.now(), messages: [...history, m] }, ...list]);
-    };
+    let accumulated = "";
 
     try {
-      const chatMessages: ChatMessage[] = history.map(({ role, content }) => ({ role, content }));
+      const apiMessages: ChatMessage[] = history.map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+
       await streamChatCompletion({
-        messages: chatMessages,
-        signal: ctrl.signal,
+        messages: apiMessages,
+        signal: controller.signal,
         onDelta: (chunk) => {
-          acc += chunk;
-          update({ role: "assistant", content: acc });
+          accumulated += chunk;
+          setConvs((current) =>
+            current.map((c) => {
+              if (c.id !== id) return c;
+              const ms = [...c.messages];
+              const last = ms.at(-1);
+              if (last && last.role === "assistant") {
+                ms[ms.length - 1] = { role: "assistant", content: accumulated };
+              }
+              return { ...c, messages: ms };
+            })
+          );
         },
       });
-
-      if (!acc.trim()) {
-        update({
-          role: "assistant",
-          content: "لم يتم استلام إجابة. يرجى التأكد من اتصال الإنترنت وإعادة المحاولة.\nNo response received. Please check connection and try again.",
-          error: true,
-        });
-      }
     } catch (e) {
-      if ((e as Error).name === "AbortError") {
-        update({ role: "assistant", content: acc || "تم الإيقاف · Stopped", error: !acc });
-      } else {
-        update({
-          role: "assistant",
-          content: acc || ((e as Error).message || "حدث خطأ في الاتصال. يرجى التحقق من اتصال الإنترنت."),
-          error: !acc,
-        });
+      if ((e as Error).name !== "AbortError") {
+        setConvs((current) =>
+          current.map((c) => {
+            if (c.id !== id) return c;
+            const ms = [...c.messages];
+            ms[ms.length - 1] = {
+              role: "assistant",
+              content: accumulated || (isAr ? "تعذر إكمال الرد، يرجى المحاولة ثانية." : "Could not complete the response, please retry."),
+              error: true,
+            };
+            return { ...c, messages: ms };
+          })
+        );
       }
     } finally {
       setBusy(false);
@@ -122,217 +131,218 @@ function Assistant() {
     }
   }
 
-  return (
-    <div className="flex h-[calc(100dvh-9.5rem)] min-h-[500px] gap-4">
-      {/* Sidebar for Conversations */}
-      <aside
-        className={`${
-          showList ? "fixed inset-x-4 top-20 z-30 max-h-[75vh]" : "hidden"
-        } panel w-auto flex-col overflow-hidden p-3 md:static md:flex md:w-64 md:max-h-none`}
-      >
-        <button
-          onClick={() => {
-            setActiveId(null);
-            setShowList(false);
-          }}
-          className="mb-3 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
-        >
-          <Plus className="h-4 w-4" />
-          محادثة جديدة · New chat
-        </button>
-        <div className="flex-1 space-y-1 overflow-y-auto">
-          {convs.length === 0 && (
-            <p className="p-3 text-center text-xs text-muted-foreground">
-              لا توجد محادثات سابقة. تُحفظ المحادثات محلياً على جهازك.
-            </p>
-          )}
-          {convs.map((c) => (
-            <div
-              key={c.id}
-              className={`group flex items-center rounded-lg transition ${
-                c.id === activeId ? "bg-accent border border-primary/20" : "hover:bg-accent/60"
-              }`}
-            >
-              <button
-                onClick={() => {
-                  setActiveId(c.id);
-                  setShowList(false);
-                }}
-                className="flex min-w-0 flex-1 items-center gap-2 px-2.5 py-2 text-left text-sm"
-              >
-                <MessageSquare className="h-3.5 w-3.5 shrink-0 text-primary" />
-                <span className="truncate font-medium" dir="auto">
-                  {c.title}
-                </span>
-              </button>
-              <button
-                aria-label="Delete conversation"
-                onClick={() => {
-                  save(convs.filter((x) => x.id !== c.id));
-                  if (activeId === c.id) setActiveId(null);
-                }}
-                className="p-2 text-muted-foreground opacity-60 hover:opacity-100 hover:text-destructive"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ))}
-        </div>
-      </aside>
+  function stop() {
+    if (abortRef.current) {
+      abortRef.current.abort();
+      setBusy(false);
+    }
+  }
 
-      {/* Main Chat Area */}
-      <section className="panel flex min-w-0 flex-1 flex-col overflow-hidden">
-        <div className="flex items-center gap-3 border-b border-border bg-card/40 px-4 py-3">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 border border-primary/30 text-primary shadow-sm">
+  function remove(id: string) {
+    const list = convs.filter((c) => c.id !== id);
+    save(list);
+    if (activeId === id) setActiveId(list[0]?.id ?? null);
+  }
+
+  return (
+    <div className="mx-auto flex h-[calc(100vh-10rem)] min-h-[520px] max-w-4xl flex-col rounded-3xl border border-border bg-card shadow-lg overflow-hidden">
+      {/* Top Header */}
+      <div className="flex h-14 items-center justify-between border-b border-border px-4 bg-muted/40">
+        <div className="flex items-center gap-2.5">
+          <div className="grid h-9 w-9 place-items-center rounded-2xl bg-primary/10 text-primary">
             <Bot className="h-5 w-5" />
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold">FUTURE WORLD AI</span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-medium text-success border border-success/30">
-                <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-                نشط · Active
+          <div>
+            <div className="font-bold text-sm sm:text-base leading-tight flex items-center gap-1.5">
+              <span>{t("aiTitle")}</span>
+              <span className="rounded-full bg-success/10 border border-success/30 px-2 py-0.2 text-[9px] font-bold text-success">
+                {isAr ? "شامل ونشط" : "LIVE & GENERAL"}
               </span>
             </div>
-            <div className="text-xs text-muted-foreground">مساعد ذكي للأمن السيبراني والتقنية · Arabic & English</div>
+            <div className="text-[11px] text-muted-foreground truncate max-w-[200px] sm:max-w-md">
+              {active ? active.title : isAr ? "محادثة جديدة" : "New Chat"}
+            </div>
           </div>
+        </div>
+
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => setShowList((s) => !s)}
-            className="h-9 rounded-lg border border-border px-3 text-xs md:hidden"
+            onClick={() => setShowList(!showList)}
+            className="flex h-9 items-center gap-1.5 rounded-full border border-border px-3 text-xs font-semibold hover:bg-accent transition"
           >
-            المحادثات
+            <MessageSquare className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{isAr ? "المحادثات السابقة" : "History"}</span>
+            <span className="rounded-full bg-muted px-1.5 py-0.2 font-mono text-[10px]">{convs.length}</span>
           </button>
           <button
             onClick={() => setActiveId(null)}
-            aria-label="New conversation"
-            className="grid h-9 w-9 place-items-center rounded-lg border border-border md:hidden"
+            className="flex h-9 items-center gap-1.5 rounded-full bg-primary/10 border border-primary/30 px-3 text-xs font-bold text-primary hover:bg-primary/20 transition"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-3.5 w-3.5" />
+            <span>{isAr ? "محادثة جديدة" : "New Chat"}</span>
           </button>
         </div>
+      </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto p-4">
-          {messages.length === 0 && (
-            <div className="flex h-full flex-col items-center justify-center text-center p-4">
-              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 border border-primary/30 text-primary mb-3">
-                <Sparkles className="h-7 w-7 animate-pulse" />
+      <div className="relative flex flex-1 overflow-hidden">
+        {/* Previous Chats Drawer/Sidebar */}
+        {showList && (
+          <div className="absolute inset-y-0 start-0 z-20 w-64 border-e border-border bg-sidebar p-3 shadow-xl backdrop-blur animate-in fade-in slide-in-from-start duration-150 flex flex-col justify-between">
+            <div className="space-y-1 overflow-y-auto">
+              <div className="px-2 py-1.5 text-xs font-bold text-muted-foreground">
+                {isAr ? "سجل المحادثات" : "Chat History"}
               </div>
-              <h2 className="text-lg font-bold">اسأل أي شيء في الأمن والتقنية</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Ask anything about cybersecurity & technology</p>
-              <p className="mt-1 max-w-md text-xs text-muted-foreground">
-                إجابات ذكية وفورية تدعم اللغتين العربية والإنجليزية، وتعمل بالذكاء الاصطناعي السحابي والمعرفة المدمجة.
-              </p>
-              <div className="mt-6 grid w-full max-w-xl gap-2 sm:grid-cols-2">
-                {SUGGESTIONS.map((s, idx) => (
-                  <button
-                    key={idx}
-                    dir="auto"
-                    onClick={() => send(s.ar)}
-                    className="flex flex-col text-right rounded-xl border border-border bg-card/60 p-3 text-sm transition hover:border-primary/60 hover:bg-accent/40"
+              {convs.length === 0 ? (
+                <div className="p-4 text-center text-xs text-muted-foreground">{isAr ? "لا توجد محادثات سابقة" : "No chats yet"}</div>
+              ) : (
+                convs.map((c) => (
+                  <div
+                    key={c.id}
+                    className={`group flex items-center justify-between rounded-xl px-3 py-2 text-xs transition cursor-pointer ${
+                      c.id === activeId ? "bg-sidebar-accent text-primary font-bold" : "hover:bg-accent/50 text-foreground"
+                    }`}
+                    onClick={() => {
+                      setActiveId(c.id);
+                      setShowList(false);
+                    }}
                   >
-                    <span className="font-medium text-foreground">{s.ar}</span>
-                    <span className="mt-0.5 text-xs text-muted-foreground">{s.en}</span>
-                  </button>
-                ))}
+                    <span className="truncate flex-1 pe-2">{c.title}</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        remove(c.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 hover:text-destructive transition p-1"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            <button
+              onClick={() => setShowList(false)}
+              className="w-full mt-2 h-8 rounded-full border border-border text-xs text-muted-foreground hover:bg-accent transition"
+            >
+              {isAr ? "إغلاق القائمة" : "Close"}
+            </button>
+          </div>
+        )}
+
+        {/* Messages View */}
+        <div className="flex flex-1 flex-col overflow-y-auto p-4 space-y-4" dir={isAr ? "rtl" : "ltr"}>
+          {messages.length === 0 ? (
+            <div className="my-auto flex flex-col items-center justify-center p-6 text-center max-w-lg mx-auto">
+              <div className="glow mb-4 grid h-16 w-16 place-items-center rounded-3xl border border-primary/30 bg-primary/10 text-primary">
+                <Sparkles className="h-8 w-8" />
+              </div>
+              <h3 className="text-xl font-bold">{t("aiTitle")}</h3>
+              <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                {t("aiSubtitle")}
+              </p>
+
+              <div className="mt-6 w-full space-y-2">
+                <div className="text-xs font-bold text-muted-foreground">{isAr ? "أسئلة مقترحة للبدء:" : "Suggested Questions:"}</div>
+                <div className="grid gap-2 text-xs text-start">
+                  {SUGGESTIONS.map((s, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => send(isAr ? s.ar : s.en)}
+                      className="rounded-2xl border border-border bg-background/50 p-2.5 hover:border-primary/50 hover:bg-accent transition flex items-center justify-between"
+                    >
+                      <span>{isAr ? s.ar : s.en}</span>
+                      <span className="text-primary font-bold">↵</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          )}
-
-          {messages.map((m, i) => (
-            <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`relative max-w-[88%] group ${m.role === "user" ? "items-end" : "items-start"}`}>
+          ) : (
+            messages.map((m, idx) => (
+              <div key={idx} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
                 <div
-                  dir="auto"
-                  className={`whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
+                  className={`max-w-[85%] rounded-3xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
                     m.role === "user"
-                      ? "bg-primary text-primary-foreground font-medium rounded-br-xs"
+                      ? "bg-primary text-primary-foreground font-medium rounded-br-sm"
                       : m.error
-                      ? "flex gap-2 border border-warning/40 bg-warning/10 text-warning rounded-bl-xs"
-                      : "bg-accent/70 border border-border/80 text-foreground rounded-bl-xs"
+                      ? "border border-destructive/40 bg-destructive/10 text-destructive rounded-bl-sm"
+                      : "border border-border bg-card text-card-foreground rounded-bl-sm"
                   }`}
                 >
-                  {m.error && <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />}
-                  {m.content || (busy && i === messages.length - 1 ? (
-                    <span className="inline-flex items-center gap-1.5 py-1" aria-label="Thinking">
-                      <span className="h-2 w-2 animate-bounce rounded-full bg-primary" />
-                      <span className="h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:150ms]" />
-                      <span className="h-2 w-2 animate-bounce rounded-full bg-primary [animation-delay:300ms]" />
-                    </span>
-                  ) : null)}
+                  <div className="whitespace-pre-wrap select-text">{m.content}</div>
                 </div>
 
-                {/* Assistant message action bar */}
                 {m.role === "assistant" && m.content && !m.error && (
-                  <div className="mt-1 flex items-center gap-1 px-1">
+                  <div className="mt-1 flex items-center gap-2 px-2 text-[11px] text-muted-foreground">
                     <button
-                      onClick={() => copyText(m.content, i)}
-                      aria-label="Copy message"
-                      className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground transition"
+                      onClick={() => copyText(m.content, idx)}
+                      className="flex items-center gap-1 hover:text-primary transition"
                     >
-                      {copiedIndex === i ? (
+                      {copiedIndex === idx ? (
                         <>
                           <Check className="h-3 w-3 text-success" />
-                          <span className="text-success">تم النسخ</span>
+                          <span className="text-success">{t("copied")}</span>
                         </>
                       ) : (
                         <>
                           <Copy className="h-3 w-3" />
-                          <span>نسخ</span>
+                          <span>{t("copy")}</span>
                         </>
                       )}
                     </button>
                   </div>
                 )}
               </div>
-            </div>
-          ))}
+            ))
+          )}
           <div ref={endRef} />
         </div>
+      </div>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            send(input);
+      {/* Input Form */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          send(input);
+        }}
+        className="border-t border-border p-3 bg-background/80 backdrop-blur flex items-center gap-2"
+        dir={isAr ? "rtl" : "ltr"}
+      >
+        <textarea
+          ref={taRef}
+          rows={1}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              send(input);
+            }
           }}
-          className="flex items-end gap-2 border-t border-border bg-card/30 p-3"
-        >
-          <textarea
-            ref={taRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            maxLength={4000}
-            rows={1}
-            dir="auto"
-            placeholder="اكتب استفسارك هنا… Type a message"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                e.preventDefault();
-                send(input);
-              }
-            }}
-            className="max-h-36 min-h-11 flex-1 resize-none rounded-xl border border-input bg-background px-3.5 py-2.5 text-base outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition"
-          />
-          {busy ? (
-            <button
-              type="button"
-              onClick={() => abortRef.current?.abort()}
-              aria-label="Stop"
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-border bg-accent text-foreground hover:bg-destructive/20 hover:text-destructive transition"
-            >
-              <Square className="h-4 w-4" />
-            </button>
-          ) : (
-            <button
-              type="submit"
-              aria-label="Send"
-              disabled={!input.trim()}
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground disabled:opacity-40 shadow-sm transition hover:opacity-90"
-            >
-              <Send className="h-4 w-4" />
-            </button>
-          )}
-        </form>
-      </section>
+          placeholder={t("aiPlaceholder")}
+          className="flex-1 max-h-32 resize-none rounded-full border border-input bg-card px-4 py-2.5 text-sm outline-none focus:border-primary placeholder:text-muted-foreground"
+        />
+
+        {busy ? (
+          <button
+            type="button"
+            onClick={stop}
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90 transition shadow-sm"
+            title={t("stop")}
+          >
+            <Square className="h-4 w-4 fill-current" />
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={!input.trim()}
+            className="glow grid h-11 w-11 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition shadow-sm disabled:opacity-40"
+            title={t("send")}
+          >
+            <Send className="h-4 w-4" />
+          </button>
+        )}
+      </form>
     </div>
   );
 }

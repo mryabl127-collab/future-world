@@ -1,14 +1,12 @@
-import { Home, ScanSearch, Bot, History, GraduationCap, Bell, Settings, Library, Wifi, ShieldCheck } from "lucide-react";
+import { Home, ScanSearch, Bot, GraduationCap, Bell, Wifi, ShieldCheck, MessageSquare } from "lucide-react";
 
 export const NAV = [
-  { to: "/", label: "Home", ar: "الرئيسية", icon: Home, desc: "Overview" },
-  { to: "/scan", label: "SCAN", ar: "الفحص", icon: ScanSearch, desc: "Inspect links and image metadata" },
-  { to: "/assistant", label: "AI Assistant", ar: "المساعد الذكي", icon: Bot, desc: "Ask security questions in Arabic or English" },
-  { to: "/history", label: "Scan History", ar: "سجل الفحص", icon: History, desc: "Your past inspections, stored on this device" },
-  { to: "/academy", label: "Cybersecurity Academy", ar: "أكاديمية الأمن", icon: GraduationCap, desc: "Structured lessons from beginner to advanced" },
-  { to: "/alerts", label: "Alerts", ar: "التنبيهات", icon: Bell, desc: "Educational security notifications" },
-  { to: "/settings", label: "Settings & Profile", ar: "الإعدادات", icon: Settings, desc: "Language, theme, and privacy" },
-  { to: "/library", label: "Cybersecurity Library", ar: "المكتبة", icon: Library, desc: "Videos, books, and PDF resources" },
-  { to: "/internet", label: "Internet Check", ar: "فحص الإنترنت", icon: Wifi, desc: "Measure real connection latency" },
-  { to: "/device", label: "Device Scan & Cleaner", ar: "فحص الجهاز", icon: ShieldCheck, desc: "A safe device-security checklist" },
+  { to: "/", label: "Home", ar: "الرئيسية", icon: Home, desc: "Overview and Iraqi digital map", descAr: "نظرة عامة وخريطة العراق الرقمية" },
+  { to: "/scan", label: "SCAN", ar: "فحص الروابط والصور", icon: ScanSearch, desc: "Deep URL audit & image metadata", descAr: "فحص وتدقيق الروابط والصور والسجل المدمج" },
+  { to: "/assistant", label: "AI Assistant", ar: "المساعد الذكي الشامل", icon: Bot, desc: "Ask questions in all fields & cyber defense", descAr: "ذكاء اصطناعي شامل يجيب عن كل شيء" },
+  { to: "/academy", label: "Academy & Library", ar: "الأكاديمية والمكتبة", icon: GraduationCap, desc: "Curriculum, digital books & certifications", descAr: "دروس تعليمية، كتب رقمية، وورش متقدمة" },
+  { to: "/device", label: "Device Scan & Cleaner", ar: "فحص وتنظيف الجهاز", icon: ShieldCheck, desc: "Smart circular diagnostic cleaner", descAr: "فحص دائري لعرض المفيد وغير المفيد بأمان" },
+  { to: "/internet", label: "Internet Check", ar: "فحص الإنترنت المتقدم", icon: Wifi, desc: "Deep latency, DNS, and connection audit", descAr: "فحص السرعة والبينغ وأمان DNS" },
+  { to: "/community", label: "Future Community", ar: "مجتمع المستقبل", icon: MessageSquare, desc: "Secure discussions & tech exchange", descAr: "مساحة محادثة آمنة للنقاش ومشاركة الأفكار" },
+  { to: "/alerts", label: "Alerts", ar: "التنبيهات الأمنية", icon: Bell, desc: "Educational security notifications", descAr: "تنبيهات الحماية والتوعية الرقمية" },
 ] as const;

@@ -49,11 +49,16 @@ jobs:
           cd android
           ./gradlew assembleDebug --no-daemon
 
+      - name: Prepare APK Files
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/FutureWorld.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/FutureWorld-v1.0.3.apk
+
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: FutureWorld-Android-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/debug/FutureWorld.apk
           if-no-files-found: error
           retention-days: 30
 
@@ -61,6 +66,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload v1.0.0 android/app/build/outputs/apk/debug/app-debug.apk#FutureWorld.apk --clobber || true
-          gh release upload v1.0.1 android/app/build/outputs/apk/debug/app-debug.apk#FutureWorld-v1.0.1.apk --clobber || true
-          gh release create v1.0.2 android/app/build/outputs/apk/debug/app-debug.apk#FutureWorld-v1.0.2.apk --title "Future World Android v1.0.2 (AI Fixed + Deep Internet Audit)" --notes "• Fixed AI Assistant: live streaming AI chat in Arabic and English directly on Android without local backend dependency.\n• Added Deep Network Audit (الفحص المدقق): Public IP, ISP, ASN, Geo-location, DoH DNS health check, and security analysis.\n• Live speed test (download throughput in Mbps and latency/jitter)." || gh release upload v1.0.2 android/app/build/outputs/apk/debug/app-debug.apk#FutureWorld-v1.0.2.apk --clobber
+          gh release create v1.0.3 \
+            android/app/build/outputs/apk/debug/FutureWorld.apk \
+            android/app/build/outputs/apk/debug/FutureWorld-v1.0.3.apk \
+            android/app/build/outputs/apk/debug/app-debug.apk \
+            --title "Future World Android v1.0.3 (Iraq Map + Tigris & Euphrates + Round UI + Bilingual + Full Community & Unified Academy)" \
+            --notes "• خريطة العراق بوضوح عالي مع مساري نهري دجلة (الأزرق) والفرات (الأحمر) والمدن الرئيسية.\n• زر 'لغات' أحمر أعلى اليمين للتحويل الفوري بين العربية والإنجليزية لجميع الصفحات بدعم RTL/LTR كامل.\n• نظام تسجيل دخول وإنشاء حساب آمن لكل الإيميلات والمنصات.\n• تصميم دائري عصري للأزرار والبطاقات والأيقونات.\n• فحص الروابط والصور المطور مع زر سجل الفحوصات المنبثق.\n• ذكاء اصطناعي شامل يجيب عن كل الأسئلة في كافة المجالات والعلوم وليس الأمن فقط.\n• تنظيف وفحص الجهاز بدائرة تحليل ذكية وفرز دقيق للعناصر غير المفيدة والمفيدة دون حذف عشوائي.\n• دمج مكتبة الكتب الرقمية للأمن السيبراني مع الأكاديمية وإضافة اختبار قياس المستوى.\n• إضافة قسم مجتمع المستقبل الآمن والمحمي للتواصل والحوار وتبادل الأفكار." || \
+          gh release upload v1.0.3 \
+            android/app/build/outputs/apk/debug/FutureWorld.apk \
+            android/app/build/outputs/apk/debug/FutureWorld-v1.0.3.apk \
+            android/app/build/outputs/apk/debug/app-debug.apk \
+            --clobber

@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AcademyRouteImport } from './routes/academy'
 import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as AssistantRouteImport } from './routes/assistant'
+import { Route as CommunityRouteImport } from './routes/community'
 import { Route as DeviceRouteImport } from './routes/device'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as InternetRouteImport } from './routes/internet'
@@ -40,6 +41,11 @@ const AlertsRoute = AlertsRouteImport.update({
 const AssistantRoute = AssistantRouteImport.update({
   id: '/assistant',
   path: '/assistant',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommunityRoute = CommunityRouteImport.update({
+  id: '/community',
+  path: '/community',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeviceRoute = DeviceRouteImport.update({
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/academy': typeof AcademyRoute
   '/alerts': typeof AlertsRoute
   '/assistant': typeof AssistantRoute
+  '/community': typeof CommunityRoute
   '/device': typeof DeviceRoute
   '/history': typeof HistoryRoute
   '/internet': typeof InternetRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/academy': typeof AcademyRoute
   '/alerts': typeof AlertsRoute
   '/assistant': typeof AssistantRoute
+  '/community': typeof CommunityRoute
   '/device': typeof DeviceRoute
   '/history': typeof HistoryRoute
   '/internet': typeof InternetRoute
@@ -117,6 +125,7 @@ export interface FileRoutesById {
   '/academy': typeof AcademyRoute
   '/alerts': typeof AlertsRoute
   '/assistant': typeof AssistantRoute
+  '/community': typeof CommunityRoute
   '/device': typeof DeviceRoute
   '/history': typeof HistoryRoute
   '/internet': typeof InternetRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
     | '/academy'
     | '/alerts'
     | '/assistant'
+    | '/community'
     | '/device'
     | '/history'
     | '/internet'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/academy'
     | '/alerts'
     | '/assistant'
+    | '/community'
     | '/device'
     | '/history'
     | '/internet'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/academy'
     | '/alerts'
     | '/assistant'
+    | '/community'
     | '/device'
     | '/history'
     | '/internet'
@@ -176,6 +188,7 @@ export interface RootRouteChildren {
   AcademyRoute: typeof AcademyRoute
   AlertsRoute: typeof AlertsRoute
   AssistantRoute: typeof AssistantRoute
+  CommunityRoute: typeof CommunityRoute
   DeviceRoute: typeof DeviceRoute
   HistoryRoute: typeof HistoryRoute
   InternetRoute: typeof InternetRoute
@@ -214,6 +227,13 @@ declare module '@tanstack/react-router' {
       path: '/assistant'
       fullPath: '/assistant'
       preLoaderRoute: typeof AssistantRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/community': {
+      id: '/community'
+      path: '/community'
+      fullPath: '/community'
+      preLoaderRoute: typeof CommunityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/device': {
@@ -280,6 +300,7 @@ const rootRouteChildren: RootRouteChildren = {
   AcademyRoute: AcademyRoute,
   AlertsRoute: AlertsRoute,
   AssistantRoute: AssistantRoute,
+  CommunityRoute: CommunityRoute,
   DeviceRoute: DeviceRoute,
   HistoryRoute: HistoryRoute,
   InternetRoute: InternetRoute,

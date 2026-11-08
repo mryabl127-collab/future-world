@@ -43,6 +43,7 @@ async function prerender() {
     { url: '/internet', file: 'internet/index.html' },
     { url: '/library', file: 'library/index.html' },
     { url: '/settings', file: 'settings/index.html' },
+    { url: '/community', file: 'community/index.html' },
   ];
 
   for (const r of routes) {

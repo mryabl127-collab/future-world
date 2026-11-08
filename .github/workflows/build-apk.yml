@@ -32,7 +32,7 @@ jobs:
       - name: Install Dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Build Web Assets & Prep Android
+      - name: Build Web Assets & Prerender Android
         run: npm run build
 
       - name: Sync Capacitor Android
@@ -58,4 +58,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload v1.0.0 android/app/build/outputs/apk/debug/app-debug.apk#FutureWorld.apk --clobber
+          gh release upload v1.0.0 android/app/build/outputs/apk/debug/app-debug.apk#FutureWorld.apk --clobber || true
+          gh release create v1.0.1 android/app/build/outputs/apk/debug/app-debug.apk#FutureWorld-v1.0.1.apk --title "Future World Android v1.0.1 (Fixed)" --notes "Fixes blank screen: bundles all app pages, styles, offline assets, and UI components directly into the APK." || gh release upload v1.0.1 android/app/build/outputs/apk/debug/app-debug.apk#FutureWorld-v1.0.1.apk --clobber

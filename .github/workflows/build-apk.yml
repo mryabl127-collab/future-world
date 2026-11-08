@@ -77,5 +77,5 @@ jobs:
               android/app/build/outputs/apk/debug/FutureWorld-v1.0.4.apk \
               --title "Future World Android v1.0.4 (AI chat fix + Community group chat)" \
               --notes "• إصلاح محادثة الذكاء الاصطناعي: صار يجاوب بشكل ثابت.
-• محادثة جماعية مباشرة في مجتمع المستقبل: الكل يشوف رسائل بعض بنفس اللحظة."
+              • محادثة جماعية مباشرة في مجتمع المستقبل: الكل يشوف رسائل بعض بنفس اللحظة."
           fi

@@ -12,6 +12,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { PageHeader } from "@/components/Shell";
+import { GroupChat } from "@/components/GroupChat";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { useLocal } from "@/lib/store";
@@ -144,6 +145,8 @@ function Community() {
         </span>
       </div>
 
+      <GroupChat isAr={isAr} />
+
       {/* Create New Post Card */}
       <form onSubmit={handleCreatePost} className="panel p-6 rounded-3xl border border-border bg-card shadow-md space-y-4">
         <div className="flex items-center justify-between border-b border-border pb-3">
@@ -228,7 +231,7 @@ function Community() {
                     <div className="flex items-center gap-1.5 font-bold text-sm">
                       <span>{post.author}</span>
                       {post.verified && (
-                        <CheckCircle2 className="h-3.5 w-3.5 text-primary" title={isAr ? "عضو موثق" : "Verified"} />
+                        <CheckCircle2 className="h-3.5 w-3.5 text-primary" aria-label={isAr ? "عضو موثق" : "Verified"} />
                       )}
                     </div>
                     <div className="text-[11px] text-muted-foreground">{post.date}</div>

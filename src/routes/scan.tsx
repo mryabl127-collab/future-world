@@ -388,7 +388,7 @@ type ImageMeta = {
   name: string;
   type: string;
   size: string;
-  dims?: string;
+  dims?: string | undefined;
   modified: string;
   exif: [string, string][];
 };

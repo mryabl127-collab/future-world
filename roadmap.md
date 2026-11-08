@@ -4,3 +4,5 @@
 - [x] Academy, Alerts, Settings, Internet Check, Device pages
 - [x] Library: videos + books/PDFs with search and filters
 - [x] Tested pages on phone size, chat, filters, all library links
+- [x] Fix AI chat (use app AI, works in APK after publish)
+- [x] Community live group chat

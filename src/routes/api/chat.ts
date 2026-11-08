@@ -4,12 +4,19 @@ type Msg = { role: "user" | "assistant"; content: string };
 
 const SYSTEM = `You are the FUTURE WORLD assistant, a helpful, knowledgeable AI. Answer questions on any subject clearly and accurately, with special expertise in cybersecurity education and defensive security. Always reply in the same language as the user's latest message (Arabic or English, or others). Use concise markdown-free plain text with short paragraphs and simple lists. Refuse to help with clearly malicious hacking against systems the user does not own.`;
 
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
 export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
+      OPTIONS: async () => new Response(null, { status: 204, headers: CORS }),
       POST: async ({ request }) => {
         const key = process.env['LOVABLE_API_KEY'];
-        if (!key) return Response.json({ error: "The AI service is not configured." }, { status: 503 });
+        if (!key) return Response.json({ error: "The AI service is not configured." }, { status: 503, headers: CORS });
         let messages: Msg[];
         try {
           const body = (await request.json()) as { messages?: unknown };
@@ -20,7 +27,7 @@ export const Route = createFileRoute("/api/chat")({
             .map((m) => ({ role: m.role, content: m.content.slice(0, 8000) }));
           if (!messages.length || messages.at(-1)!.role !== "user") throw new Error();
         } catch {
-          return Response.json({ error: "Invalid request." }, { status: 400 });
+          return Response.json({ error: "Invalid request." }, { status: 400, headers: CORS });
         }
 
         const upstream = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
@@ -41,7 +48,7 @@ export const Route = createFileRoute("/api/chat")({
           const msg = upstream.status === 429 ? "Too many requests right now. Please wait a moment and try again."
             : upstream.status === 402 ? "The AI service has run out of credits."
             : "The AI service is temporarily unavailable.";
-          return Response.json({ error: msg }, { status: upstream.status === 429 || upstream.status === 402 ? upstream.status : 502 });
+          return Response.json({ error: msg }, { status: upstream.status === 429 || upstream.status === 402 ? upstream.status : 502, headers: CORS });
         }
 
         const decoder = new TextDecoder();
@@ -63,7 +70,7 @@ export const Route = createFileRoute("/api/chat")({
             }
           },
         }));
-        return new Response(stream, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache, no-transform" } });
+        return new Response(stream, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache, no-transform", ...CORS } });
       },
     },
   },

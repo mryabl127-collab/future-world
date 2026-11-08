@@ -40,7 +40,7 @@ type LatencyResult = {
   max: number;
   jitter: number;
   samples: number[];
-  speedMbps?: string;
+  speedMbps?: string | undefined;
   rating: "excellent" | "good" | "fair" | "poor";
 };
 
@@ -64,7 +64,7 @@ type DeepAuditResult = {
 
 function InternetPage() {
   const [online, setOnline] = useState(true);
-  const [conn, setConn] = useState<{ type?: string; downlink?: number; rtt?: number } | null>(null);
+  const [conn, setConn] = useState<{ type?: string | undefined; downlink?: number | undefined; rtt?: number | undefined } | null>(null);
 
   // Speed test state
   const [latencyRes, setLatencyRes] = useState<LatencyResult | null>(null);
@@ -150,7 +150,7 @@ function InternetPage() {
       const jitter =
         validSamples.length > 1
           ? Math.round(
-              validSamples.slice(1).reduce((a, b, i) => a + Math.abs(b - validSamples[i]), 0) /
+              validSamples.slice(1).reduce((a, b, i) => a + Math.abs(b - (validSamples[i] ?? b)), 0) /
                 (validSamples.length - 1)
             )
           : 0;

@@ -63,7 +63,7 @@ export function useAuth() {
     else if (domain.includes("yahoo")) providerName = "Yahoo Mail";
     else if (domain.includes("icloud")) providerName = "Apple iCloud";
 
-    const userName = name?.trim() || cleanEmail.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    const userName = name?.trim() || (cleanEmail.split("@")[0] ?? "").replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
     const profile: UserProfile = {
       id: crypto.randomUUID(),

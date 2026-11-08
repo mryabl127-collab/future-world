@@ -109,6 +109,17 @@ I can assist you with:
 💡 Please ensure your device is connected to the internet for live AI responses.`;
 }
 
+// The Android app is a static bundle with no server, so it must call the published site.
+const PUBLISHED_ORIGIN = "https://hearthside-ai-conversations.lovable.app";
+
+export function getApiBase(): string {
+  if (typeof window === "undefined") return "";
+  const w = window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } };
+  const native = !!w.Capacitor?.isNativePlatform?.() || window.location.protocol === "capacitor:" ||
+    (window.location.hostname === "localhost" && window.location.port === "");
+  return native ? PUBLISHED_ORIGIN : "";
+}
+
 export async function streamChatCompletion({
   messages,
   onDelta,
@@ -119,101 +130,46 @@ export async function streamChatCompletion({
   signal?: AbortSignal;
 }): Promise<void> {
   const lastUserMessage = messages.filter((m) => m.role === "user").at(-1)?.content || "";
-  const formattedMessages = [
-    { role: "system", content: SYSTEM_PROMPT },
-    ...messages.slice(-20).map((m) => ({ role: m.role, content: m.content.slice(0, 4000) })),
-  ];
+  const clean = messages
+    .filter((m) => m.role !== "system" && m.content.trim())
+    .slice(-20)
+    .map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }));
 
-  // Custom key if provided
-  let customKey = "";
+  let res: Response;
   try {
-    customKey = localStorage.getItem("fw-ai-key") || "";
-  } catch {
-    // ignore
-  }
-
-  if (customKey.trim().startsWith("sk-")) {
-    try {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        signal,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${customKey.trim()}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: formattedMessages,
-          stream: true,
-        }),
-      });
-
-      if (res.ok && res.body) {
-        await readSseStream(res.body, onDelta);
-        return;
-      }
-    } catch (e) {
-      if ((e as Error).name === "AbortError") throw e;
-    }
-  }
-
-  // Primary Public Engine: Fast, OpenAI-compatible SSE streaming
-  try {
-    const res = await fetch("https://flm.stonech.at/v1/chat/completions", {
+    res = await fetch(`${getApiBase()}/api/chat`, {
       method: "POST",
-      signal,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messages: formattedMessages,
-        stream: true,
-      }),
+      signal: signal ?? null,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: clean }),
     });
-
-    if (res.ok && res.body) {
-      await readSseStream(res.body, onDelta);
-      return;
-    }
   } catch (e) {
     if ((e as Error).name === "AbortError") throw e;
-    console.warn("Primary AI endpoint failed, trying backup...", e);
+    // No connection: answer from the built-in knowledge.
+    await typeOut(getOfflineFallback(lastUserMessage), onDelta, signal);
+    return;
   }
 
-  // Backup Engine: Pollinations OpenAI endpoint
-  try {
-    const res = await fetch("https://text.pollinations.ai/", {
-      method: "POST",
-      signal,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messages: formattedMessages,
-        model: "openai-fast",
-      }),
-    });
-
-    if (res.ok) {
-      const text = await res.text();
-      if (text && !text.includes("Free limit reached")) {
-        const chunks = text.match(/.{1,12}/g) || [text];
-        for (const c of chunks) {
-          if (signal?.aborted) return;
-          onDelta(c);
-          await new Promise((r) => setTimeout(r, 20));
-        }
-        return;
-      }
-    }
-  } catch (e) {
-    if ((e as Error).name === "AbortError") throw e;
-    console.warn("Backup AI endpoint failed", e);
+  if (!res.ok || !res.body) {
+    let msg = "";
+    try { msg = ((await res.json()) as { error?: string }).error || ""; } catch { /* ignore */ }
+    throw new Error(msg || `AI error ${res.status}`);
   }
 
-  // Offline Fallback
-  const offlineText = getOfflineFallback(lastUserMessage);
-  const chunks = offlineText.match(/.{1,10}/g) || [offlineText];
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let got = false;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const text = decoder.decode(value, { stream: true });
+    if (text) { got = true; onDelta(text); }
+  }
+  if (!got) throw new Error("Empty AI response");
+}
+
+async function typeOut(text: string, onDelta: (c: string) => void, signal?: AbortSignal) {
+  const chunks = text.match(/.{1,10}/gs) || [text];
   for (const c of chunks) {
     if (signal?.aborted) return;
     onDelta(c);
@@ -221,34 +177,6 @@ export async function streamChatCompletion({
   }
 }
 
-async function readSseStream(body: ReadableStream<Uint8Array>, onDelta: (chunk: string) => void): Promise<void> {
-  const reader = body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
+// Kept for reference: SYSTEM_PROMPT lives on the server route.
+void SYSTEM_PROMPT;
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
-
-    for (const rawLine of lines) {
-      const line = rawLine.trim();
-      if (!line || line === "data: [DONE]") continue;
-
-      if (line.startsWith("data:")) {
-        try {
-          const json = JSON.parse(line.slice(5).trim());
-          const delta = json.choices?.[0]?.delta?.content || "";
-          if (delta) {
-            onDelta(delta);
-          }
-        } catch {
-          // ignore partial JSON chunk
-        }
-      }
-    }
-  }
-}

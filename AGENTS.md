@@ -28,3 +28,6 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+- The Android app is a static bundle; client code calls server routes via getApiBase() in src/lib/ai-service.ts (published origin when native), so those routes must send CORS headers.
+- Community group chat is public (no real auth yet): community_messages allows anon read/insert.

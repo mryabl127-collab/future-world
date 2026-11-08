@@ -173,7 +173,7 @@ function Academy() {
     setDone(done.includes(id) ? done.filter((x) => x !== id) : [...done, id]);
 
   const scoreCount = Object.entries(quizAnswers).filter(
-    ([qIdx, optIdx]) => QUIZ_QUESTIONS[Number(qIdx)].correct === optIdx
+    ([qIdx, optIdx]) => QUIZ_QUESTIONS[Number(qIdx)]?.correct === optIdx
   ).length;
 
   return (

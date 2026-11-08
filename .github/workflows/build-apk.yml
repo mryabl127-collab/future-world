@@ -52,7 +52,7 @@ jobs:
       - name: Prepare APK Files
         run: |
           cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/FutureWorld.apk
-          cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/FutureWorld-v1.0.3.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/FutureWorld-v1.0.4.apk
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
@@ -66,14 +66,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create v1.0.3 \
-            android/app/build/outputs/apk/debug/FutureWorld.apk \
-            android/app/build/outputs/apk/debug/FutureWorld-v1.0.3.apk \
-            android/app/build/outputs/apk/debug/app-debug.apk \
-            --title "Future World Android v1.0.3 (Iraq Map + Tigris & Euphrates + Round UI + Bilingual + Full Community & Unified Academy)" \
-            --notes "• خريطة العراق بوضوح عالي مع مساري نهري دجلة (الأزرق) والفرات (الأحمر) والمدن الرئيسية.\n• زر 'لغات' أحمر أعلى اليمين للتحويل الفوري بين العربية والإنجليزية لجميع الصفحات بدعم RTL/LTR كامل.\n• نظام تسجيل دخول وإنشاء حساب آمن لكل الإيميلات والمنصات.\n• تصميم دائري عصري للأزرار والبطاقات والأيقونات.\n• فحص الروابط والصور المطور مع زر سجل الفحوصات المنبثق.\n• ذكاء اصطناعي شامل يجيب عن كل الأسئلة في كافة المجالات والعلوم وليس الأمن فقط.\n• تنظيف وفحص الجهاز بدائرة تحليل ذكية وفرز دقيق للعناصر غير المفيدة والمفيدة دون حذف عشوائي.\n• دمج مكتبة الكتب الرقمية للأمن السيبراني مع الأكاديمية وإضافة اختبار قياس المستوى.\n• إضافة قسم مجتمع المستقبل الآمن والمحمي للتواصل والحوار وتبادل الأفكار." || \
-          gh release upload v1.0.3 \
-            android/app/build/outputs/apk/debug/FutureWorld.apk \
-            android/app/build/outputs/apk/debug/FutureWorld-v1.0.3.apk \
-            android/app/build/outputs/apk/debug/app-debug.apk \
-            --clobber
+          if gh release view v1.0.4 >/dev/null 2>&1; then
+            gh release upload v1.0.4 \
+              android/app/build/outputs/apk/debug/FutureWorld.apk \
+              android/app/build/outputs/apk/debug/FutureWorld-v1.0.4.apk \
+              --clobber
+          else
+            gh release create v1.0.4 \
+              android/app/build/outputs/apk/debug/FutureWorld.apk \
+              android/app/build/outputs/apk/debug/FutureWorld-v1.0.4.apk \
+              --title "Future World Android v1.0.4 (AI chat fix + Community group chat)" \
+              --notes "• إصلاح محادثة الذكاء الاصطناعي: صار يجاوب بشكل ثابت.
+• محادثة جماعية مباشرة في مجتمع المستقبل: الكل يشوف رسائل بعض بنفس اللحظة."
+          fi

@@ -1,0 +1,5 @@
+{
+	"appId": "com.futureworld.app",
+	"appName": "Future World",
+	"webDir": "dist/client"
+}

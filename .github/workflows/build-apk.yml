@@ -62,4 +62,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload v1.0.0 android/app/build/outputs/apk/debug/app-debug.apk#FutureWorld.apk --clobber || true
-          gh release create v1.0.1 android/app/build/outputs/apk/debug/app-debug.apk#FutureWorld-v1.0.1.apk --title "Future World Android v1.0.1 (Fixed)" --notes "Fixes blank screen: bundles all app pages, styles, offline assets, and UI components directly into the APK." || gh release upload v1.0.1 android/app/build/outputs/apk/debug/app-debug.apk#FutureWorld-v1.0.1.apk --clobber
+          gh release upload v1.0.1 android/app/build/outputs/apk/debug/app-debug.apk#FutureWorld-v1.0.1.apk --clobber || true
+          gh release create v1.0.2 android/app/build/outputs/apk/debug/app-debug.apk#FutureWorld-v1.0.2.apk --title "Future World Android v1.0.2 (AI Fixed + Deep Internet Audit)" --notes "• Fixed AI Assistant: live streaming AI chat in Arabic and English directly on Android without local backend dependency.\n• Added Deep Network Audit (الفحص المدقق): Public IP, ISP, ASN, Geo-location, DoH DNS health check, and security analysis.\n• Live speed test (download throughput in Mbps and latency/jitter)." || gh release upload v1.0.2 android/app/build/outputs/apk/debug/app-debug.apk#FutureWorld-v1.0.2.apk --clobber

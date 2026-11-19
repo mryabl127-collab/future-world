@@ -36,7 +36,9 @@ jobs:
         run: npm install --legacy-peer-deps
 
       - name: Build Web Assets & Prerender Android
-        run: npm run build
+        run: |
+          npm run build
+          node scripts/prepare-android.js || true
 
       - name: Sync Capacitor Android
         run: npx cap sync android

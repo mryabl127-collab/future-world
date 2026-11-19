@@ -59,6 +59,9 @@
   --color-ring-offset-background: var(--background);
   --color-warning: var(--warning);
   --color-success: var(--success);
+  --color-map-green: var(--map-green);
+  --color-speed-down: var(--speed-down);
+  --color-speed-up: var(--speed-up);
   --font-display: "Sora", "IBM Plex Sans Arabic", sans-serif;
   --font-sans: "Manrope", "IBM Plex Sans Arabic", sans-serif;
   --color-chart-1: var(--chart-1);
@@ -96,6 +99,10 @@
   --destructive-foreground: oklch(0.18 0.02 75);
   --warning: oklch(0.8 0.14 75);
   --success: oklch(0.75 0.14 165);
+  --map-green: oklch(0.74 0.19 148);
+  --speed-down: oklch(0.8 0.13 210);
+  --speed-up: oklch(0.72 0.19 305);
+  --map-neighbor: oklch(0.24 0.01 255);
   --border: oklch(0.7 0.18 245 / 16%);
   --input: oklch(0.7 0.18 245 / 22%);
   --ring: oklch(0.7 0.18 245);
@@ -133,3 +140,32 @@ body { font-family: var(--font-sans); background-image: radial-gradient(ellipse 
 h1, h2, h3 { font-family: var(--font-display); }
 @utility glow { box-shadow: var(--glow); }
 @utility panel { background-color: color-mix(in oklab, var(--card) 85%, transparent); border: 1px solid var(--border); border-radius: var(--radius-xl); }
+
+/* ChatGPT-style assistant surface: near-black neutral palette scoped to the chat screen. */
+.chat-theme {
+  --background: oklch(0 0 0);
+  --foreground: oklch(0.97 0 0);
+  --card: oklch(0.2 0 0);
+  --card-foreground: oklch(0.97 0 0);
+  --popover: oklch(0.2 0 0);
+  --popover-foreground: oklch(0.97 0 0);
+  --secondary: oklch(0.27 0 0);
+  --secondary-foreground: oklch(0.97 0 0);
+  --muted: oklch(0.22 0 0);
+  --muted-foreground: oklch(0.62 0 0);
+  --accent: oklch(0.26 0 0);
+  --accent-foreground: oklch(0.97 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(1 0 0 / 20%);
+  --chat-send: oklch(0.6 0.2 258);
+  --chat-send-foreground: oklch(0.99 0 0);
+  --chat-upgrade: oklch(0.74 0.14 240);
+  background: var(--background);
+  color: var(--foreground);
+}
+@theme inline {
+  --color-chat-send: var(--chat-send);
+  --color-chat-send-foreground: var(--chat-send-foreground);
+  --color-chat-upgrade: var(--chat-upgrade);
+}

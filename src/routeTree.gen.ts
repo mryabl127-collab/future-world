@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AcademyRouteImport } from './routes/academy'
 import { Route as AlertsRouteImport } from './routes/alerts'
-import { Route as AssistantRouteImport } from './routes/assistant'
 import { Route as CommunityRouteImport } from './routes/community'
 import { Route as DeviceRouteImport } from './routes/device'
 import { Route as HistoryRouteImport } from './routes/history'
@@ -22,6 +21,8 @@ import { Route as ScanRouteImport } from './routes/scan'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiPingRouteImport } from './routes/api/ping'
+import { Route as AssistantIndexRouteImport } from './routes/assistant.index'
+import { Route as AssistantThreadIdRouteImport } from './routes/assistant.$threadId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -36,11 +37,6 @@ const AcademyRoute = AcademyRouteImport.update({
 const AlertsRoute = AlertsRouteImport.update({
   id: '/alerts',
   path: '/alerts',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AssistantRoute = AssistantRouteImport.update({
-  id: '/assistant',
-  path: '/assistant',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CommunityRoute = CommunityRouteImport.update({
@@ -88,12 +84,21 @@ const ApiPingRoute = ApiPingRouteImport.update({
   path: '/api/ping',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AssistantIndexRoute = AssistantIndexRouteImport.update({
+  id: '/assistant/',
+  path: '/assistant/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssistantThreadIdRoute = AssistantThreadIdRouteImport.update({
+  id: '/assistant/$threadId',
+  path: '/assistant/$threadId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/academy': typeof AcademyRoute
   '/alerts': typeof AlertsRoute
-  '/assistant': typeof AssistantRoute
   '/community': typeof CommunityRoute
   '/device': typeof DeviceRoute
   '/history': typeof HistoryRoute
@@ -103,12 +108,13 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/ping': typeof ApiPingRoute
+  '/assistant/$threadId': typeof AssistantThreadIdRoute
+  '/assistant/': typeof AssistantIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/academy': typeof AcademyRoute
   '/alerts': typeof AlertsRoute
-  '/assistant': typeof AssistantRoute
   '/community': typeof CommunityRoute
   '/device': typeof DeviceRoute
   '/history': typeof HistoryRoute
@@ -118,13 +124,14 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/ping': typeof ApiPingRoute
+  '/assistant/$threadId': typeof AssistantThreadIdRoute
+  '/assistant': typeof AssistantIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/academy': typeof AcademyRoute
   '/alerts': typeof AlertsRoute
-  '/assistant': typeof AssistantRoute
   '/community': typeof CommunityRoute
   '/device': typeof DeviceRoute
   '/history': typeof HistoryRoute
@@ -134,6 +141,8 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/ping': typeof ApiPingRoute
+  '/assistant/$threadId': typeof AssistantThreadIdRoute
+  '/assistant/': typeof AssistantIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -141,7 +150,6 @@ export interface FileRouteTypes {
     | '/'
     | '/academy'
     | '/alerts'
-    | '/assistant'
     | '/community'
     | '/device'
     | '/history'
@@ -151,12 +159,13 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/chat'
     | '/api/ping'
+    | '/assistant/$threadId'
+    | '/assistant/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/academy'
     | '/alerts'
-    | '/assistant'
     | '/community'
     | '/device'
     | '/history'
@@ -166,12 +175,13 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/chat'
     | '/api/ping'
+    | '/assistant/$threadId'
+    | '/assistant'
   id:
     | '__root__'
     | '/'
     | '/academy'
     | '/alerts'
-    | '/assistant'
     | '/community'
     | '/device'
     | '/history'
@@ -181,13 +191,14 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/chat'
     | '/api/ping'
+    | '/assistant/$threadId'
+    | '/assistant/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AcademyRoute: typeof AcademyRoute
   AlertsRoute: typeof AlertsRoute
-  AssistantRoute: typeof AssistantRoute
   CommunityRoute: typeof CommunityRoute
   DeviceRoute: typeof DeviceRoute
   HistoryRoute: typeof HistoryRoute
@@ -197,6 +208,8 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiPingRoute: typeof ApiPingRoute
+  AssistantThreadIdRoute: typeof AssistantThreadIdRoute
+  AssistantIndexRoute: typeof AssistantIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -220,13 +233,6 @@ declare module '@tanstack/react-router' {
       path: '/alerts'
       fullPath: '/alerts'
       preLoaderRoute: typeof AlertsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/assistant': {
-      id: '/assistant'
-      path: '/assistant'
-      fullPath: '/assistant'
-      preLoaderRoute: typeof AssistantRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/community': {
@@ -292,6 +298,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/assistant/': {
+      id: '/assistant/'
+      path: '/assistant'
+      fullPath: '/assistant/'
+      preLoaderRoute: typeof AssistantIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/assistant/$threadId': {
+      id: '/assistant/$threadId'
+      path: '/assistant/$threadId'
+      fullPath: '/assistant/$threadId'
+      preLoaderRoute: typeof AssistantThreadIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -299,7 +319,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AcademyRoute: AcademyRoute,
   AlertsRoute: AlertsRoute,
-  AssistantRoute: AssistantRoute,
   CommunityRoute: CommunityRoute,
   DeviceRoute: DeviceRoute,
   HistoryRoute: HistoryRoute,
@@ -309,6 +328,8 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   ApiChatRoute: ApiChatRoute,
   ApiPingRoute: ApiPingRoute,
+  AssistantThreadIdRoute: AssistantThreadIdRoute,
+  AssistantIndexRoute: AssistantIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

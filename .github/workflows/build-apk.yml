@@ -52,7 +52,7 @@ jobs:
       - name: Prepare APK Files
         run: |
           cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/FutureWorld.apk
-          cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/FutureWorld-v1.0.4.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/FutureWorld-v1.0.6.apk
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
@@ -66,16 +66,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if gh release view v1.0.4 >/dev/null 2>&1; then
-            gh release upload v1.0.4 \
+          if gh release view v1.0.6 >/dev/null 2>&1; then
+            gh release upload v1.0.6 \
               android/app/build/outputs/apk/debug/FutureWorld.apk \
-              android/app/build/outputs/apk/debug/FutureWorld-v1.0.4.apk \
+              android/app/build/outputs/apk/debug/FutureWorld-v1.0.6.apk \
               --clobber
           else
-            gh release create v1.0.4 \
+            gh release create v1.0.6 \
               android/app/build/outputs/apk/debug/FutureWorld.apk \
-              android/app/build/outputs/apk/debug/FutureWorld-v1.0.4.apk \
-              --title "Future World Android v1.0.4 (AI chat fix + Community group chat)" \
-              --notes "• إصلاح محادثة الذكاء الاصطناعي: صار يجاوب بشكل ثابت.
-              • محادثة جماعية مباشرة في مجتمع المستقبل: الكل يشوف رسائل بعض بنفس اللحظة."
+              android/app/build/outputs/apk/debug/FutureWorld-v1.0.6.apk \
+              --title \"Future World Android v1.0.6\" \
+              --notes \"• خريطة العراق التفاعلية مع المحافظات والأنهار باللون الأخضر.
+• فحص وتنظيف حقيقي للجهاز وفق مواصفات النظام.
+• مساعد ذكي متكامل بنمط ChatGPT.
+• اختبار سرعة إنترنت حقيقي يشمل التحميل والرفع والـ Ping.
+• مجتمع المستقبل والتفاعلات الحية.\"
           fi

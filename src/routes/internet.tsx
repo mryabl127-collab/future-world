@@ -19,6 +19,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { PageHeader } from "@/components/Shell";
+import { SpeedTest } from "@/components/SpeedTest";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
@@ -33,16 +34,6 @@ export const Route = createFileRoute("/internet")({
   }),
   component: InternetPage,
 });
-
-type LatencyResult = {
-  avg: number;
-  min: number;
-  max: number;
-  jitter: number;
-  samples: number[];
-  speedMbps?: string | undefined;
-  rating: "excellent" | "good" | "fair" | "poor";
-};
 
 type DeepAuditResult = {
   ip: string;
@@ -66,11 +57,6 @@ function InternetPage() {
   const [online, setOnline] = useState(true);
   const [conn, setConn] = useState<{ type?: string | undefined; downlink?: number | undefined; rtt?: number | undefined } | null>(null);
 
-  // Speed test state
-  const [latencyRes, setLatencyRes] = useState<LatencyResult | null>(null);
-  const [latencyBusy, setLatencyBusy] = useState(false);
-  const [latencyErr, setLatencyErr] = useState("");
-
   // Deep audit state
   const [auditRes, setAuditRes] = useState<DeepAuditResult | null>(null);
   const [auditBusy, setAuditBusy] = useState(false);
@@ -92,81 +78,6 @@ function InternetPage() {
       window.removeEventListener("offline", updateOnline);
     };
   }, []);
-
-  // 1. Quick Latency & Speed Test
-  const runLatencyTest = async () => {
-    setLatencyBusy(true);
-    setLatencyErr("");
-    setLatencyRes(null);
-
-    try {
-      const samples: number[] = [];
-      // Test ping across reliable global CDN nodes
-      const testUrls = [
-        "https://1.1.1.1/cdn-cgi/trace",
-        "https://cloudflare-dns.com/dns-query?name=example.com&type=A",
-        "https://dns.google/resolve?name=example.com&type=A",
-        "https://1.1.1.1/cdn-cgi/trace",
-        "https://cloudflare-dns.com/dns-query?name=cloudflare.com&type=A",
-      ];
-
-      for (let i = 0; i < testUrls.length; i++) {
-        const start = performance.now();
-        try {
-          await fetch(testUrls[i] + `&_t=${Date.now()}_${i}`, {
-            cache: "no-store",
-            mode: "cors",
-            headers: { accept: "application/dns-json, text/plain, */*" },
-          });
-          samples.push(Math.round(performance.now() - start));
-        } catch {
-          // If CORS fails on direct, measure timing via fetch head or fallback
-          samples.push(Math.round(performance.now() - start));
-        }
-      }
-
-      if (samples.length === 0) throw new Error("Could not measure latency");
-
-      // Measure real throughput (500KB test)
-      let speedMbps: string | undefined = undefined;
-      try {
-        const dlStart = performance.now();
-        const dlRes = await fetch("https://speed.cloudflare.com/__down?bytes=500000", {
-          cache: "no-store",
-        });
-        const blob = await dlRes.blob();
-        const durationSec = (performance.now() - dlStart) / 1000;
-        if (durationSec > 0 && blob.size > 0) {
-          speedMbps = ((blob.size * 8) / (durationSec * 1024 * 1024)).toFixed(1);
-        }
-      } catch {
-        // speed test optional
-      }
-
-      const validSamples = samples.slice(1).length ? samples.slice(1) : samples;
-      const avg = Math.round(validSamples.reduce((a, b) => a + b, 0) / validSamples.length);
-      const min = Math.min(...validSamples);
-      const max = Math.max(...validSamples);
-      const jitter =
-        validSamples.length > 1
-          ? Math.round(
-              validSamples.slice(1).reduce((a, b, i) => a + Math.abs(b - (validSamples[i] ?? b)), 0) /
-                (validSamples.length - 1)
-            )
-          : 0;
-
-      let rating: LatencyResult["rating"] = "poor";
-      if (avg < 60) rating = "excellent";
-      else if (avg < 120) rating = "good";
-      else if (avg < 250) rating = "fair";
-
-      setLatencyRes({ avg, min, max, jitter, samples: validSamples, speedMbps, rating });
-    } catch {
-      setLatencyErr("تعذر قياس الاستجابة. تأكد من اتصال هاتفك بالإنترنت وأعد المحاولة.");
-    } finally {
-      setLatencyBusy(false);
-    }
-  };
 
   // 2. Deep Network & Security Audit
   const runDeepAudit = async () => {
@@ -302,15 +213,15 @@ function InternetPage() {
         )}
       </div>
 
-      <Tabs defaultValue="audit" className="w-full">
+      <Tabs defaultValue="speed" className="w-full">
         <TabsList className="mb-6 grid w-full grid-cols-2">
-          <TabsTrigger value="audit" className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-primary" />
-            <span className="font-semibold">الفحص المدقق (Deep Audit)</span>
-          </TabsTrigger>
           <TabsTrigger value="speed" className="flex items-center gap-2">
             <Gauge className="h-4 w-4 text-primary" />
-            <span className="font-semibold">فحص السرعة والاستجابة (Speed)</span>
+            <span className="font-semibold">اختبار السرعة</span>
+          </TabsTrigger>
+          <TabsTrigger value="audit" className="flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-primary" />
+            <span className="font-semibold">الفحص المدقق</span>
           </TabsTrigger>
         </TabsList>
 
@@ -481,98 +392,9 @@ function InternetPage() {
           )}
         </TabsContent>
 
-        {/* TAB 2: SPEED & LATENCY (فحص السرعة والاستجابة) */}
+        {/* TAB 2: SPEED TEST (Speedtest-style, real measurement) */}
         <TabsContent value="speed" className="space-y-5">
-          <div className="panel p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h3 className="text-base font-bold flex items-center gap-2">
-                  <Gauge className="h-5 w-5 text-primary" />
-                  قياس سرعة التحميل وزمن الاستجابة (Ping)
-                </h3>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  قياس حقيقي ودقيق للتأخير (Latency) وتقلب الاتصال (Jitter) وسرعة التنزيل الفعلية.
-                </p>
-              </div>
-              <button
-                onClick={runLatencyTest}
-                disabled={latencyBusy || !online}
-                className="glow inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 font-semibold text-primary-foreground disabled:opacity-50 transition shadow-sm"
-              >
-                {latencyBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Activity className="h-4 w-4" />}
-                {latencyBusy ? "جاري القياس…" : "بدء اختبار السرعة"}
-              </button>
-            </div>
-          </div>
-
-          {latencyErr && (
-            <div className="panel p-4 text-sm text-warning border border-warning/40 bg-warning/10">
-              {latencyErr}
-            </div>
-          )}
-
-          {latencyRes && (
-            <div className="space-y-4">
-              {/* Quality Rating Banner */}
-              <div className="panel p-4 flex items-center justify-between bg-card/60">
-                <div className="flex items-center gap-3">
-                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 border border-primary/30 text-primary">
-                    <Zap className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground">مستوى جودة الاتصال</div>
-                    <div className="font-bold text-base capitalize flex items-center gap-2">
-                      {latencyRes.rating === "excellent" && <span className="text-success">⚡ ممتاز (Excellent)</span>}
-                      {latencyRes.rating === "good" && <span className="text-primary">🟢 جيد جداً (Good)</span>}
-                      {latencyRes.rating === "fair" && <span className="text-warning">🟡 متوسط (Fair)</span>}
-                      {latencyRes.rating === "poor" && <span className="text-destructive">🔴 ضعيف (Poor)</span>}
-                    </div>
-                  </div>
-                </div>
-                {latencyRes.speedMbps && (
-                  <div className="text-right">
-                    <div className="text-xs text-muted-foreground">سرعة التحميل</div>
-                    <div className="text-lg font-bold text-primary font-mono">{latencyRes.speedMbps} <span className="text-xs">Mbps</span></div>
-                  </div>
-                )}
-              </div>
-
-              {/* Latency Stats Grid */}
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {[
-                  ["متوسط التأخير (Average)", latencyRes.avg, "ms"],
-                  ["الأسرع (Fastest)", latencyRes.min, "ms"],
-                  ["الأبطأ (Slowest)", latencyRes.max, "ms"],
-                  ["التقلب (Jitter)", latencyRes.jitter, "ms"],
-                ].map(([label, val, unit]) => (
-                  <div key={label as string} className="panel p-4 text-center">
-                    <div className="text-2xl font-bold tabular-nums text-primary font-mono">
-                      {val}
-                      <span className="text-xs text-muted-foreground font-sans"> {unit}</span>
-                    </div>
-                    <div className="mt-1 text-[11px] text-muted-foreground">{label}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="panel p-4 text-xs text-muted-foreground">
-                تم قياس زمن الذهاب والعودة عبر عينات متعددة ({latencyRes.samples.join(", ")} ms). القياسات مباشرة من هاتفك إلى خوادم شبكة تسليم المحتوى العالمية.
-              </div>
-            </div>
-          )}
-
-          {/* Browser Network info */}
-          {conn && (conn.downlink || conn.rtt || conn.type) && (
-            <div className="panel p-4 text-sm space-y-2">
-              <div className="text-xs font-bold text-muted-foreground flex items-center gap-2">
-                <Activity className="h-3.5 w-3.5 text-primary" />
-                بيانات بطاقة الشبكة للهاتف
-              </div>
-              <p className="text-xs text-muted-foreground">
-                النوع: <strong className="text-foreground">{conn.type?.toUpperCase() ?? "غير محدد"}</strong> · النطاق الترددي المقدر: <strong className="text-foreground">{conn.downlink ?? "—"} Mbps</strong> · وقت الاستجابة التقديري: <strong className="text-foreground">{conn.rtt ?? "—"} ms</strong>
-              </p>
-            </div>
-          )}
+          <SpeedTest online={online} />
         </TabsContent>
       </Tabs>
     </div>

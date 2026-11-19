@@ -3,6 +3,7 @@ import { ArrowRight, MapPin, ScanSearch, Bot, GraduationCap, ShieldCheck, Wifi, 
 import { Logo } from "@/components/Logo";
 import { DemoBadge } from "@/components/Shell";
 import { useTranslation } from "@/lib/i18n";
+import { IRAQ_MAP, projectIraq } from "@/lib/iraq-map-data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -11,23 +12,135 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "فحص الروابط المشبوهة، مساعد ذكي شامل، أكاديمية ومكتبة الأمن الرقمي، وتنظيف وفحص أمان الأجهزة." },
       { property: "og:title", content: "FUTURE WORLD — منصة عالم المستقبل" },
       { property: "og:description", content: "منظومة متكاملة للأمن السيبراني والذكاء الاصطناعي مع خريطة العراق التفاعلية." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Index,
 });
 
 const IRAQ_CITIES = [
-  { name: "بغداد (Baghdad)", en: "Baghdad", x: 235, y: 195, v: 480, capital: true },
-  { name: "البصرة (Basra)", en: "Basra", x: 330, y: 310, v: 240 },
-  { name: "أربيل (Erbil)", en: "Erbil", x: 215, y: 92, v: 195 },
-  { name: "الموصل (Mosul)", en: "Mosul", x: 175, y: 90, v: 170 },
-  { name: "النجف الأشرف (Najaf)", en: "Najaf", x: 210, y: 245, v: 145 },
-  { name: "كربلاء المقدسة (Karbala)", en: "Karbala", x: 212, y: 220, v: 138 },
-  { name: "السليمانية (Sulaymaniyah)", en: "Sulaymaniyah", x: 260, y: 110, v: 130 },
-  { name: "كركوك (Kirkuk)", en: "Kirkuk", x: 225, y: 130, v: 118 },
-  { name: "الناصرية (Nasiriyah)", en: "Nasiriyah", x: 285, y: 285, v: 110 },
-  { name: "الرمادي (Ramadi)", en: "Ramadi", x: 180, y: 185, v: 105 },
+  { name: "بغداد (Baghdad)", en: "Baghdad", lon: 44.366, lat: 33.315, v: 480, capital: true },
+  { name: "البصرة (Basra)", en: "Basra", lon: 47.783, lat: 30.508, v: 240 },
+  { name: "أربيل (Erbil)", en: "Erbil", lon: 44.009, lat: 36.191, v: 195 },
+  { name: "الموصل (Mosul)", en: "Mosul", lon: 43.13, lat: 36.34, v: 170 },
+  { name: "النجف الأشرف (Najaf)", en: "Najaf", lon: 44.336, lat: 32.0, v: 145 },
+  { name: "كربلاء المقدسة (Karbala)", en: "Karbala", lon: 44.024, lat: 32.616, v: 138 },
+  { name: "السليمانية (Sulaymaniyah)", en: "Sulaymaniyah", lon: 45.437, lat: 35.557, v: 130 },
+  { name: "كركوك (Kirkuk)", en: "Kirkuk", lon: 44.392, lat: 35.468, v: 118 },
+  { name: "الناصرية (Nasiriyah)", en: "Nasiriyah", lon: 46.258, lat: 31.058, v: 110 },
+  { name: "الرمادي (Ramadi)", en: "Ramadi", lon: 43.3, lat: 33.42, v: 105 },
 ];
+
+const NEIGHBOR_LABELS = [
+  { ar: "تركيا", en: "TURKEY", lon: 41.2, lat: 37.55 },
+  { ar: "سوريا", en: "SYRIA", lon: 39.4, lat: 35.2 },
+  { ar: "إيران", en: "IRAN", lon: 47.6, lat: 34.2 },
+  { ar: "السعودية", en: "SAUDI ARABIA", lon: 42.2, lat: 29.3 },
+  { ar: "الكويت", en: "KUWAIT", lon: 47.55, lat: 29.35 },
+  { ar: "الأردن", en: "JORDAN", lon: 38.6, lat: 32.2 },
+];
+
+function IraqMap({ isAr }: { isAr: boolean }) {
+  const tigris = projectIraq(43.75, 34.45);
+  const euphrates = projectIraq(42.25, 34.05);
+  const shatt = projectIraq(47.95, 30.25);
+  return (
+    <svg
+      viewBox={IRAQ_MAP.viewBox}
+      className="h-auto w-full"
+      role="img"
+      aria-label={isAr ? "خريطة العراق مع المحافظات ونهري دجلة والفرات" : "Map of Iraq with provinces and the Tigris and Euphrates rivers"}
+    >
+      <defs>
+        <clipPath id="iraq-clip">
+          <path d={IRAQ_MAP.outline} />
+        </clipPath>
+      </defs>
+
+      {/* Neighbouring countries for context */}
+      {IRAQ_MAP.neighbors.map((n) => (
+        <path key={n.name} d={n.d} fill="var(--map-neighbor)" stroke="var(--border)" strokeWidth="0.6" />
+      ))}
+      {NEIGHBOR_LABELS.map((n) => {
+        const p = projectIraq(n.lon, n.lat);
+        return (
+          <text key={n.en} x={p.x} y={p.y} textAnchor="middle" fontSize="8" fill="var(--muted-foreground)" opacity="0.7" className="select-none">
+            {isAr ? n.ar : n.en}
+          </text>
+        );
+      })}
+
+      {/* Iraq land: same tint and border colour as before */}
+      <path
+        d={IRAQ_MAP.outline}
+        fill="color-mix(in oklab, var(--primary) 14%, var(--card))"
+        stroke="none"
+      />
+      {IRAQ_MAP.provinces.map((p) => (
+        <path key={p.name} d={p.d} fill="transparent" className="transition-colors hover:fill-[color-mix(in_oklab,var(--map-green)_14%,transparent)]">
+          <title>{p.name}</title>
+        </path>
+      ))}
+
+      {/* Province borders in green */}
+      <path d={IRAQ_MAP.provinceBorders} fill="none" stroke="var(--map-green)" strokeWidth="0.9" strokeDasharray="3 2" strokeLinejoin="round" opacity="0.9" />
+
+      {/* Rivers and lakes in green */}
+      <g clipPath="url(#iraq-clip)">
+        {IRAQ_MAP.lakes.map((l) => (
+          <path key={l.name} d={l.d} fill="color-mix(in oklab, var(--map-green) 55%, transparent)" stroke="var(--map-green)" strokeWidth="0.6" />
+        ))}
+        {IRAQ_MAP.rivers.map((r, i) => (
+          <path
+            key={`${r.name}-${i}`}
+            d={r.d}
+            fill="none"
+            stroke="var(--map-green)"
+            strokeWidth={r.major ? 2 : 1}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        ))}
+      </g>
+
+      {/* Country border */}
+      <path d={IRAQ_MAP.outline} fill="none" stroke="var(--primary)" strokeWidth="1.8" strokeLinejoin="round" />
+
+      {/* River labels */}
+      <g fontSize="9" fontWeight="bold" fill="var(--map-green)" className="select-none pointer-events-none">
+        <text x={tigris.x} y={tigris.y}>{isAr ? "دجلة" : "Tigris"}</text>
+        <text x={euphrates.x} y={euphrates.y}>{isAr ? "الفرات" : "Euphrates"}</text>
+        <text x={shatt.x} y={shatt.y} fontSize="7">{isAr ? "شط العرب" : "Shatt al-Arab"}</text>
+      </g>
+
+      {/* Cities */}
+      {IRAQ_CITIES.map((c) => {
+        const p = projectIraq(c.lon, c.lat);
+        return (
+          <g key={c.en}>
+            {c.capital ? (
+              <>
+                <circle cx={p.x} cy={p.y} r="8" fill="var(--warning)" opacity="0.25" className="animate-ping" style={{ transformOrigin: `${p.x}px ${p.y}px` }} />
+                <circle cx={p.x} cy={p.y} r="4" fill="var(--warning)" stroke="var(--background)" strokeWidth="1" />
+                <text x={p.x + 7} y={p.y + 4} fontSize="11" fontWeight="bold" fill="var(--warning)">
+                  {isAr ? "بغداد ★" : "Baghdad ★"}
+                </text>
+              </>
+            ) : (
+              <>
+                <circle cx={p.x} cy={p.y} r="2.6" fill="var(--foreground)" stroke="var(--background)" strokeWidth="0.8" />
+                <text x={p.x + 5} y={p.y + 3} fontSize="8" fill="var(--foreground)" opacity="0.9">
+                  {isAr ? c.name.split(" ")[0] : c.en}
+                </text>
+              </>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
 
 function Index() {
   const { t, isAr } = useTranslation();
@@ -186,7 +299,7 @@ function Index() {
         </div>
       </section>
 
-      {/* Iraq Map Section with Tigris (Blue) and Euphrates (Red) */}
+      {/* Iraq Map Section: real province borders, rivers and lakes */}
       <section className="panel grid gap-8 p-6 md:grid-cols-2 rounded-3xl border border-border shadow-md">
         <div>
           <div className="flex items-center gap-2">
@@ -195,15 +308,15 @@ function Index() {
           </div>
           <p className="mt-2 text-sm text-muted-foreground">{t("visitorsNote")}</p>
 
-          {/* River Legend */}
+          {/* Legend */}
           <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl border border-border bg-background/50 p-3 text-xs">
             <div className="flex items-center gap-2">
-              <span className="h-3 w-8 rounded-full bg-sky-400 shadow-sm" />
-              <span className="font-bold text-sky-400">{t("tigrisRiver")}</span>
+              <span className="h-1 w-8 rounded-full bg-map-green" />
+              <span className="font-bold text-map-green">{isAr ? "الأنهار (دجلة والفرات)" : "Rivers (Tigris & Euphrates)"}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="h-3 w-8 rounded-full bg-red-500 shadow-sm" />
-              <span className="font-bold text-red-500">{t("euphratesRiver")}</span>
+              <span className="h-0 w-8 border-t border-dashed border-map-green" />
+              <span className="font-bold text-map-green">{isAr ? "حدود المحافظات (18)" : "Province borders (18)"}</span>
             </div>
           </div>
 
@@ -221,157 +334,13 @@ function Index() {
           </ul>
         </div>
 
-        {/* Detailed SVG Map of Iraq with Rivers */}
         <div className="flex flex-col items-center justify-center">
-          <div className="relative w-full max-w-[360px] rounded-2xl border border-border/80 bg-card/60 p-4 shadow-inner">
-            <svg
-              viewBox="0 0 420 400"
-              className="w-full h-auto drop-shadow-md"
-              role="img"
-              aria-label="خريطة جمهورية العراق مع نهري دجلة والفرات"
-            >
-              <defs>
-                <filter id="glow-blue" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="2" result="blur" />
-                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                </filter>
-                <filter id="glow-red" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="2" result="blur" />
-                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                </filter>
-              </defs>
-
-              {/* Iraq Border Polygon Outline */}
-              <path
-                d="M 120 45 
-                   L 155 35 
-                   L 185 28 
-                   L 220 38 
-                   L 255 52 
-                   L 285 75 
-                   L 305 110 
-                   L 290 145 
-                   L 315 185 
-                   L 340 230 
-                   L 365 275 
-                   L 380 320 
-                   L 365 350 
-                   L 335 345 
-                   L 300 330 
-                   L 260 305 
-                   L 220 280 
-                   L 160 250 
-                   L 90 220 
-                   L 50 185 
-                   L 30 140 
-                   L 45 110 
-                   L 75 80 
-                   L 100 55 Z"
-                fill="color-mix(in oklab, var(--primary) 12%, transparent)"
-                stroke="var(--primary)"
-                strokeWidth="2"
-                strokeLinejoin="round"
-                className="transition-colors"
-              />
-
-              {/* Internal Subtle Topography Curves */}
-              <path
-                d="M 80 90 Q 150 120 220 100"
-                fill="none"
-                stroke="var(--border)"
-                strokeWidth="0.8"
-                strokeDasharray="2 3"
-              />
-              <path
-                d="M 70 170 Q 140 200 240 180"
-                fill="none"
-                stroke="var(--border)"
-                strokeWidth="0.8"
-                strokeDasharray="2 3"
-              />
-
-              {/* Tigris River (نهر دجلة) - Blue River Path */}
-              <path
-                d="M 145 35 
-                   Q 160 65 175 90 
-                   T 200 135 
-                   T 220 165 
-                   T 235 195 
-                   T 265 235 
-                   T 295 270 
-                   T 315 295"
-                fill="none"
-                stroke="#38bdf8"
-                strokeWidth="3.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                filter="url(#glow-blue)"
-              />
-
-              {/* Euphrates River (نهر الفرات) - Red River Path */}
-              <path
-                d="M 60 115 
-                   Q 95 130 130 150 
-                   T 180 185 
-                   T 205 215 
-                   T 225 240 
-                   T 255 265 
-                   T 285 285 
-                   T 315 295"
-                fill="none"
-                stroke="#ef4444"
-                strokeWidth="3.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                filter="url(#glow-red)"
-              />
-
-              {/* Shatt al-Arab Confluence (شط العرب) to Basra and Gulf */}
-              <path
-                d="M 315 295 
-                   Q 330 310 345 330 
-                   L 355 348"
-                fill="none"
-                stroke="#0284c7"
-                strokeWidth="4"
-                strokeLinecap="round"
-              />
-
-              {/* River Labels directly on the map */}
-              <g className="font-bold text-[10px] select-none pointer-events-none">
-                <text x="145" y="70" fill="#38bdf8" transform="rotate(35 145 70)">نهر دجلة</text>
-                <text x="80" y="145" fill="#ef4444" transform="rotate(22 80 145)">نهر الفرات</text>
-                <text x="325" y="338" fill="#38bdf8" fontSize="8">شط العرب</text>
-              </g>
-
-              {/* City Dots and Markers */}
-              {IRAQ_CITIES.map((c) => (
-                <g key={c.en} className="transition-transform hover:scale-125 cursor-pointer">
-                  {c.capital ? (
-                    <>
-                      <circle cx={c.x} cy={c.y} r="8" fill="#eab308" opacity="0.25" className="animate-ping" />
-                      <circle cx={c.x} cy={c.y} r="4.5" fill="#eab308" stroke="#000" strokeWidth="1" />
-                      <text x={c.x + 8} y={c.y + 4} fontSize="11" fontWeight="bold" fill="#eab308">
-                        {isAr ? "بغداد ★" : "Baghdad ★"}
-                      </text>
-                    </>
-                  ) : (
-                    <>
-                      <circle cx={c.x} cy={c.y} r="2.8" fill="var(--primary)" />
-                      <text x={c.x + 6} y={c.y + 3} fontSize="8.5" fill="var(--foreground)" opacity="0.9">
-                        {isAr ? c.name.split(" ")[0] : c.en}
-                      </text>
-                    </>
-                  )}
-                </g>
-              ))}
-            </svg>
-
-            {/* Map bottom indicators */}
+          <div className="relative w-full max-w-[420px] rounded-2xl border border-border/80 bg-card/60 p-3 shadow-inner">
+            <IraqMap isAr={isAr} />
             <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground px-1 border-t border-border/50 pt-2">
               <span className="flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 inline-block animate-pulse" />
-                {isAr ? "خريطة جغرافية حية" : "Live Regional Nodes"}
+                <span className="h-2 w-2 rounded-full bg-map-green inline-block animate-pulse" />
+                {isAr ? "خريطة جغرافية حقيقية" : "Real geographic map"}
               </span>
               <span>{isAr ? "ملتقى القرنة وشط العرب" : "Al-Qurna Confluence"}</span>
             </div>

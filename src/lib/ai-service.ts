@@ -110,7 +110,7 @@ I can assist you with:
 }
 
 // The Android app is a static bundle with no server, so it must call the published site.
-const PUBLISHED_ORIGIN = "https://hearthside-ai-conversations.lovable.app";
+const PUBLISHED_ORIGIN = "https://green-map-smart-clean.lovable.app";
 
 export function getApiBase(): string {
   if (typeof window === "undefined") return "";

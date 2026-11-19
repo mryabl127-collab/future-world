@@ -75,10 +75,6 @@ jobs:
             gh release create v1.0.6 \
               android/app/build/outputs/apk/debug/FutureWorld.apk \
               android/app/build/outputs/apk/debug/FutureWorld-v1.0.6.apk \
-              --title \"Future World Android v1.0.6\" \
-              --notes \"• خريطة العراق التفاعلية مع المحافظات والأنهار باللون الأخضر.
-• فحص وتنظيف حقيقي للجهاز وفق مواصفات النظام.
-• مساعد ذكي متكامل بنمط ChatGPT.
-• اختبار سرعة إنترنت حقيقي يشمل التحميل والرفع والـ Ping.
-• مجتمع المستقبل والتفاعلات الحية.\"
+              --title "Future World Android v1.0.6" \
+              --notes "Future World Android v1.0.6: Iraq green map, smart device clean, ChatGPT AI assistant, real internet speedtest with upload/download, community chat"
           fi

@@ -1,20 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-async function prerender() {
-  const candidates = [
-    path.resolve('.output/server/index.mjs'),
-    path.resolve('dist/server/index.mjs')
-  ];
-  let serverEntry = candidates.find(p => fs.existsSync(p));
-
-  if (!serverEntry) {
-    console.error('Server build not found in candidates:', candidates);
-    process.exit(1);
-  }
-
-  console.log('Using server bundle at:', serverEntry);
-
+async function prepareAndroid() {
   const clientDir = path.resolve('dist/client');
   const outputPublic = path.resolve('.output/public');
 
@@ -29,53 +16,61 @@ async function prerender() {
     fs.cpSync(outputPublic, clientDir, { recursive: true });
   }
 
-  const server = await import(`file://${serverEntry}`);
-  const env = { ASSETS: { fetch: (req) => fetch(req) } };
-
-  const routes = [
-    { url: '/', file: 'index.html' },
-    { url: '/academy', file: 'academy/index.html' },
-    { url: '/assistant', file: 'assistant/index.html' },
-    { url: '/scan', file: 'scan/index.html' },
-    { url: '/alerts', file: 'alerts/index.html' },
-    { url: '/device', file: 'device/index.html' },
-    { url: '/history', file: 'history/index.html' },
-    { url: '/internet', file: 'internet/index.html' },
-    { url: '/library', file: 'library/index.html' },
-    { url: '/settings', file: 'settings/index.html' },
-    { url: '/community', file: 'community/index.html' },
-  ];
-
-  for (const r of routes) {
-    try {
-      const res = await server.default.fetch(new Request('http://localhost' + r.url), env);
-      if (res.status === 200) {
-        let html = await res.text();
-        const targets = [
-          path.join(clientDir, r.file),
-          ...(fs.existsSync(outputPublic) ? [path.join(outputPublic, r.file)] : [])
-        ];
-        for (const dest of targets) {
-          fs.mkdirSync(path.dirname(dest), { recursive: true });
-          fs.writeFileSync(dest, html, 'utf8');
-        }
-        console.log(`Prerendered ${r.url} (${html.length} bytes)`);
-      } else {
-        console.warn(`Failed to render ${r.url}: status ${res.status}`);
-      }
-    } catch (err) {
-      console.error(`Error prerendering ${r.url}:`, err);
+  const liveUrl = 'https://green-map-smart-clean.lovable.app';
+  const launcherHtml = `<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>FUTURE WORLD</title>
+  <link rel="icon" href="favicon.ico">
+  <style>
+    body {
+      margin: 0;
+      background: #030712;
+      color: #00f0ff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      font-family: system-ui, -apple-system, sans-serif;
     }
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3px solid rgba(0, 240, 255, 0.15);
+      border-top-color: #00f0ff;
+      border-radius: 50%;
+      animation: spin 0.8s ease-in-out infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .title { margin-top: 16px; font-size: 14px; letter-spacing: 0.15em; color: #94a3b8; font-weight: 600; }
+  </style>
+</head>
+<body class="bg-background text-foreground">
+  <div class="spinner"></div>
+  <div class="title">FUTURE WORLD</div>
+  <script type="module">
+    window.location.replace("${liveUrl}" || "/");
+  </script>
+</body>
+</html>`;
+
+  fs.writeFileSync(path.join(clientDir, 'index.html'), launcherHtml, 'utf8');
+  fs.writeFileSync(path.join(clientDir, '404.html'), launcherHtml, 'utf8');
+
+  // Also write to android assets if they exist
+  const androidPublic = path.resolve('android/app/src/main/assets/public');
+  if (fs.existsSync(androidPublic)) {
+    fs.writeFileSync(path.join(androidPublic, 'index.html'), launcherHtml, 'utf8');
+    fs.writeFileSync(path.join(androidPublic, '404.html'), launcherHtml, 'utf8');
   }
 
-  const fallback = path.join(clientDir, '404.html');
-  const indexFile = path.join(clientDir, 'index.html');
-  if (fs.existsSync(indexFile)) {
-    fs.copyFileSync(indexFile, fallback);
-  }
+  console.log('Android assets prepared with live URL launcher:', liveUrl);
 }
 
-prerender().catch((err) => {
-  console.error('Prerender failed:', err);
+prepareAndroid().catch((err) => {
+  console.error('Prepare Android failed:', err);
   process.exit(1);
 });
